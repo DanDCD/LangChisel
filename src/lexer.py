@@ -18,6 +18,14 @@ class Token:
     def __repr__(self) -> str:
         return f"(Type: {self.type}, Value:{self.value})"
 
+    def __eq__(self, other):
+        if isinstance(other, Token):
+            return self.type == other.type and self.value == other.value
+        return False
+    
+    def __hash__(self):
+        return hash((self.type, self.value))
+
 
 def check_for_match(substring: str, pattern_to_type: dict[re.Pattern, TokenType])->TokenType:
     """checks if the substring matches a lexeme, if so returns the token type
