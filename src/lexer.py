@@ -5,9 +5,11 @@ from typing import Callable
 
 class TokenType(Enum):
     WHITE_SPACE = "WHITE_SPACE"
+    LINE_BREAK = "LINE_BREAK"
     VAR_DECLARATION = "VAR"
     IDENTIFIER = "IDENTIFIER"
     ASSIGN = "ASSIGN"
+    ADD = "ADD"
     NUM = "NUM"
     EOF = "EOF"
 
