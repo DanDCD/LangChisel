@@ -12,6 +12,8 @@ class TokenType(Enum):
     ADD = "ADD"
     NUM = "NUM"
     EOF = "EOF"
+    a = "a"
+    b = "b"
 
 
 class Token:
@@ -32,12 +34,14 @@ class Token:
         if isinstance(other, Token):
             return self.type == other.type and self.value == other.value
         return False
-    
+
     def __hash__(self):
         return hash((self.type, self.value))
 
 
-def check_for_match(substring: str, pattern_to_type: dict[re.Pattern, TokenType])->TokenType:
+def check_for_match(
+    substring: str, pattern_to_type: dict[re.Pattern, TokenType]
+) -> TokenType:
     """checks if the substring matches a lexeme, if so returns the token type
 
     Args:
@@ -53,19 +57,21 @@ def check_for_match(substring: str, pattern_to_type: dict[re.Pattern, TokenType]
     return None
 
 
-def find_lexemes(string: str, pattern_to_type: dict[re.Pattern, TokenType]) -> list[(str, TokenType)]:
+def find_lexemes(
+    string: str, pattern_to_type: dict[re.Pattern, TokenType]
+) -> list[(str, TokenType)]:
     """Identifies Lexemes in messy text
-    
+
     Args:
         string str: the text to search for lexemes
-        
+
     Returns
         list[(str, TokenType)]: a list of substring lexemes and the associated token types
     """
     foundLexemes: list[(str, TokenType)] = []
     front = 0
     back = len(string)
-    while(back > front):
+    while back > front:
         substring = string[front:back]
         lexeme = check_for_match(substring, pattern_to_type)
         if lexeme:
@@ -73,12 +79,15 @@ def find_lexemes(string: str, pattern_to_type: dict[re.Pattern, TokenType]) -> l
             front = back
             back = len(string)
         else:
-            back -=1
+            back -= 1
     foundLexemes.append(("", TokenType.EOF))
     return foundLexemes
 
 
-def construct_tokens(lexemes: list[(str, TokenType)], type_to_extractor: dict[re.Pattern, Callable[[str], any]]) -> list[Token]:
+def construct_tokens(
+    lexemes: list[(str, TokenType)],
+    type_to_extractor: dict[re.Pattern, Callable[[str], any]],
+) -> list[Token]:
     """_summary_
 
     Args:
@@ -92,4 +101,3 @@ def construct_tokens(lexemes: list[(str, TokenType)], type_to_extractor: dict[re
         extractor = type_to_extractor.get(lexeme_type)
         tokens.append(Token(lexeme_type, extractor(substring) if extractor else None))
     return tokens
-
