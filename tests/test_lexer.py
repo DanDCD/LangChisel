@@ -1,6 +1,21 @@
 import pytest
 from src.lexer import *
 
+ # a mapping of compiled regular expressions to their respective tokentype enums
+regex_to_tokentype: dict[re.Pattern, TokenType] = {
+    re.compile(r"\s+") : TokenType.WHITE_SPACE,
+    re.compile(r"=") : TokenType.ASSIGN,
+    re.compile(r"\d+") : TokenType.NUM,
+    re.compile(r"\w+") :TokenType.IDENTIFIER,
+}
+
+
+# a mapping of tokentypes to callables used to extract data from a lexeme of this type
+tokentype_to_data_extraction: dict[re.Pattern, Callable[[str], any]] = {
+    TokenType.IDENTIFIER: lambda substr :  str(substr),
+    TokenType.NUM: lambda substr : int(substr)
+}
+
 
 def test_find_lexemes():
     source_code = "my_num = 5"
@@ -9,7 +24,8 @@ def test_find_lexemes():
         (' ', TokenType.WHITE_SPACE),
         ('=', TokenType.ASSIGN),
         (' ', TokenType.WHITE_SPACE),
-        ('5', TokenType.NUM)
+        ('5', TokenType.NUM),
+        ('', TokenType.EOF)
     ]
     
     lexemes = find_lexemes(source_code, regex_to_tokentype)
@@ -22,7 +38,8 @@ def test_construct_tokens():
         (' ', TokenType.WHITE_SPACE),
         ('=', TokenType.ASSIGN),
         (' ', TokenType.WHITE_SPACE),
-        ('5', TokenType.NUM)
+        ('5', TokenType.NUM),
+        ('', TokenType.EOF)
     ]
 
     expected_tokens = [
@@ -30,7 +47,8 @@ def test_construct_tokens():
         Token(TokenType.WHITE_SPACE, None),
         Token(TokenType.ASSIGN, None),
         Token(TokenType.WHITE_SPACE, None),
-        Token(TokenType.NUM, 5)         
+        Token(TokenType.NUM, 5),
+        Token(TokenType.EOF, None)  
     ]
     
     tokens = construct_tokens(lexemes, tokentype_to_data_extraction)
