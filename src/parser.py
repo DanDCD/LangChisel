@@ -1,6 +1,7 @@
 from lexer import Token, TokenType
 from enum import Enum
 
+
 class CFSymbol:
     def __init__(self, value: str | TokenType) -> None:
         """A Single Context Free Symbol
@@ -30,22 +31,104 @@ class CFProduction:
 
 
 # Grammar:
-# 1. S -> AB
-# 2. A -> a
-# 3. A -> eps
-# 4. B -> b
+# 1. S -> A S
+# 2. S -> epsilon
+# 3. A -> t B
+# 4. A -> u
+# 5. B -> v
 
 symbol_S = CFSymbol("S")
 symbol_A = CFSymbol("A")
 symbol_B = CFSymbol("B")
-symbol_a = CFSymbol(TokenType.a)
-symbol_b = CFSymbol(TokenType.b)
+symbol_t = CFSymbol(TokenType.t)
+symbol_u = CFSymbol(TokenType.u)
+symbol_v = CFSymbol(TokenType.v)
 symbol_epsilon = CFSymbol(None)
 
-production_1 = CFProduction(symbol_S, [symbol_A, symbol_B])
-production_2 = CFProduction(symbol_A, [symbol_a])
-production_3 = CFProduction(symbol_A, [symbol_epsilon])
-production_4 = CFProduction(symbol_B, [symbol_b])
+test_grammar = [
+    CFProduction(symbol_S, [symbol_A, symbol_S]),
+    CFProduction(symbol_S, [symbol_epsilon]),
+    CFProduction(symbol_A, [symbol_t, symbol_B]),
+    CFProduction(symbol_A, [symbol_u]),
+    CFProduction(symbol_B, [symbol_v])
+]
+
+
+def get_non_terminals(grammar: list[CFProduction]) -> list[CFSymbol]:
+    """ """
+    return list(set([production.from_symbol for production in grammar]))
+
+
+def get_terminals(grammar: list[CFProduction]) -> list[CFSymbol]:
+    """ """
+    terminals = []
+    for production in grammar:
+        for symbol in production.to_sequence:
+            if is_terminal(symbol):
+                terminals.append(symbol)
+    return list(set(terminals))
+
+
+def is_terminal(symbol: CFSymbol) -> bool:
+    """ """
+    return isinstance(symbol.value, TokenType)
+
+
+def LL1_first(symbol: CFSymbol, grammar: list[CFProduction]) -> list[CFSymbol]:
+    """iterate through possible derivations from symbol and extract all the terminals that may appear first in a string derived from symbol"""
+    # definition for First(a) = {a}  OR First(epsilon) = {epsilon}
+    if is_terminal(symbol) or symbol.value == None:
+        return [symbol]
+    first_set = set()
+    relevant_productions = [
+        production for production in grammar if production.from_symbol == symbol
+    ]
+    for production in relevant_productions:
+        to_sequence = production.to_sequence
+        # should never have a production that does not contain a single derived symbol
+        assert len(to_sequence) > 0
+
+        # First(A) += {t} if A -> t W OR First(A) += epsilon if A -> epsilon
+        if is_terminal(to_sequence[0]) or to_sequence[0].value == None:
+            first_set.add(production.to_sequence[0])
+            continue
+
+        # First(A) += First(B) + First(C) if A -> B C and epsilon in B OR First(A) += First(B) if A -> A B
+        for i, symbol in enumerate(to_sequence):
+            first_of_symbol = LL1_first(symbol, grammar)
+            # add all terminals in First(X) other than epsilon
+            first_set.update(first_of_symbol - {CFSymbol(None)})
+
+            # we can only keep adding (i.e. add First(C) if First(B) contained epsilon)
+            if not CFSymbol(None) in first_of_symbol:
+                break
+
+            # if we have reached the end of the to_sequence and (from above) first(X) contains epsilon, we add epsilon
+            if i == len(to_sequence) - 1:
+                first_set.add(CFSymbol(None))
+
+    return first_set
+
+
+def extract_LL1_first_sets(grammar: list[CFProduction]) -> dict[CFSymbol, list[CFSymbol]]:
+    """ """
+    first_sets: dict[CFSymbol, list[CFSymbol]] = {}
+    non_terminals = get_non_terminals(grammar)
+    terminals = get_terminals(grammar)
+
+    for symbol in non_terminals:
+        first_sets[symbol] = LL1_first(symbol, grammar)
+    for symbol in terminals:
+        first_sets[symbol] = LL1_first(symbol, grammar)
+
+    return first_sets
+
+
+extract_LL1_first_sets(test_grammar)
+
+
+def extract_LL1_follow_sets(grammar: list[CFProduction]) -> dict:
+    pass
 
 
 def build_LL1_table(grammar: list[CFProduction]) -> dict:

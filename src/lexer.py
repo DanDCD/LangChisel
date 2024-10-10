@@ -12,8 +12,9 @@ class TokenType(Enum):
     ADD = "ADD"
     NUM = "NUM"
     EOF = "EOF"
-    a = "a"
-    b = "b"
+    t= "t"
+    u = "u"
+    v = "v"
 
 
 class Token:
