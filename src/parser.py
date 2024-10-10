@@ -74,8 +74,12 @@ def is_terminal(symbol: CFSymbol) -> bool:
     return isinstance(symbol.value, TokenType)
 
 
-def LL1_first(symbol: CFSymbol, grammar: list[CFProduction]) -> list[CFSymbol]:
+def LL1_first(symbol: CFSymbol, grammar: list[CFProduction], known_first_sets: dict[CFSymbol, list[CFSymbol]]) -> list[CFSymbol]:
     """iterate through possible derivations from symbol and extract all the terminals that may appear first in a string derived from symbol"""
+    
+    if symbol in known_first_sets:
+        return known_first_sets[symbol]
+    
     # definition for First(a) = {a}  OR First(epsilon) = {epsilon}
     if is_terminal(symbol) or symbol.value == None:
         return [symbol]
@@ -95,7 +99,7 @@ def LL1_first(symbol: CFSymbol, grammar: list[CFProduction]) -> list[CFSymbol]:
 
         # First(A) += First(B) + First(C) if A -> B C and epsilon in B OR First(A) += First(B) if A -> A B
         for i, symbol in enumerate(to_sequence):
-            first_of_symbol = LL1_first(symbol, grammar)
+            first_of_symbol = LL1_first(symbol, grammar, known_first_sets)
             # add all terminals in First(X) other than epsilon
             first_set.update(first_of_symbol - {CFSymbol(None)})
 
@@ -113,13 +117,10 @@ def LL1_first(symbol: CFSymbol, grammar: list[CFProduction]) -> list[CFSymbol]:
 def extract_LL1_first_sets(grammar: list[CFProduction]) -> dict[CFSymbol, list[CFSymbol]]:
     """ """
     first_sets: dict[CFSymbol, list[CFSymbol]] = {}
-    non_terminals = get_non_terminals(grammar)
-    terminals = get_terminals(grammar)
+    symbols = get_non_terminals(grammar)+get_terminals(grammar)
 
-    for symbol in non_terminals:
-        first_sets[symbol] = LL1_first(symbol, grammar)
-    for symbol in terminals:
-        first_sets[symbol] = LL1_first(symbol, grammar)
+    for symbol in symbols:
+        first_sets[symbol] = LL1_first(symbol, grammar, first_sets)
 
     return first_sets
 
