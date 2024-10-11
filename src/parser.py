@@ -125,7 +125,12 @@ def extract_LL1_first_sets(grammar: list[CFProduction]) -> dict[CFSymbol, list[C
     return first_sets
 
 
-extract_LL1_first_sets(test_grammar)
+
+
+def LL1_follow(symbol: CFSymbol, grammar: list[CFProduction], known_follow_sets: dict[CFSymbol, list[CFSymbol]]) -> dict[CFSymbol, list[CFSymbol]]:
+    if symbol in known_follow_sets:
+        return known_follow_sets[symbol]
+    
 
 
 def extract_LL1_follow_sets(grammar: list[CFProduction]) -> dict:
@@ -134,6 +139,8 @@ def extract_LL1_follow_sets(grammar: list[CFProduction]) -> dict:
 
 def build_LL1_table(grammar: list[CFProduction]) -> dict:
     pass
+
+extract_LL1_first_sets(test_grammar)
 
 
 class ASTNodeType(Enum):
