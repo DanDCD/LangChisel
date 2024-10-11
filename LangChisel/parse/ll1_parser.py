@@ -1,4 +1,4 @@
-from lexer import Token, TokenType
+from LangChisel.lex.greedy_backtrack_lexer import Token, TokenType
 from enum import Enum
 
 

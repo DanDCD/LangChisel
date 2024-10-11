@@ -1,5 +1,12 @@
+# tests/test_lexer.py
+import sys
+import os
 import pytest
-from src.lexer import *
+
+# Add the package root to sys.path
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+
+from LangChisel.lex import *
 
  # a mapping of compiled regular expressions to their respective tokentype enums
 regex_to_tokentype: dict[re.Pattern, TokenType] = {
