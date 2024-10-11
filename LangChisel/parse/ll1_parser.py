@@ -13,12 +13,12 @@ class CFSymbol:
 
     def __repr__(self) -> str:
         return f"(CFSymbol: {self.value})"
-    
+
     def __eq__(self, other: object) -> bool:
         if isinstance(other, CFSymbol):
             return self.value == other.value
         return False
-    
+
     def __hash__(self) -> int:
         return hash((self.value))
 
@@ -39,34 +39,14 @@ class CFProduction:
 
     def __eq__(self, other: object) -> bool:
         if isinstance(other, CFProduction):
-            return self.from_symbol == other.from_symbol and self.to_sequence == other.to_sequence
+            return (
+                self.from_symbol == other.from_symbol
+                and self.to_sequence == other.to_sequence
+            )
         return False
-    
+
     def __hash__(self) -> int:
         return hash((self.from_symbol, self.to_sequence))
-
-# Grammar:
-# 1. S -> A S
-# 2. S -> epsilon
-# 3. A -> t B
-# 4. A -> u
-# 5. B -> v
-
-symbol_S = CFSymbol("S")
-symbol_A = CFSymbol("A")
-symbol_B = CFSymbol("B")
-symbol_t = CFSymbol(TokenTag("t"))
-symbol_u = CFSymbol(TokenTag("u"))
-symbol_v = CFSymbol(TokenTag("v"))
-symbol_epsilon = CFSymbol(None)
-
-test_grammar = [
-    CFProduction(symbol_S, [symbol_A, symbol_S]),
-    CFProduction(symbol_S, [symbol_epsilon]),
-    CFProduction(symbol_A, [symbol_t, symbol_B]),
-    CFProduction(symbol_A, [symbol_u]),
-    CFProduction(symbol_B, [symbol_v]),
-]
 
 
 def get_non_terminals(grammar: list[CFProduction]) -> list[CFSymbol]:
@@ -109,7 +89,8 @@ def LL1_first(
 
     # definition for First(a) = {a}  OR First(epsilon) = {epsilon}
     if is_terminal(symbol) or symbol.value == None:
-        return [symbol]
+        known_first_sets[symbol] = [symbol]
+        return known_first_sets[symbol]
 
     first_set = set()  # this will be the set of 'First(symbol)' we will return
     relevant_productions = [
@@ -121,25 +102,21 @@ def LL1_first(
         # should never have a production that does not contain a single derived symbol
         assert len(to_sequence) > 0
 
-        # First(A) += {t} if A -> t W OR First(A) += epsilon if A -> epsilon
-        if is_terminal(to_sequence[0]) or to_sequence[0].value == None:
-            first_set.add(production.to_sequence[0])
-            continue
-
         # First(A) += First(B) + First(C) if A -> B C and epsilon in B OR First(A) += First(B) if A -> A B
-        for i, symbol in enumerate(to_sequence):
-            first_of_symbol = LL1_first(symbol, grammar, known_first_sets)
+        for i, sym in enumerate(to_sequence):
+            first_of_sym = LL1_first(sym, grammar, known_first_sets)
             # add all terminals in First(X) other than epsilon
-            first_set.update(set(first_of_symbol) - {CFSymbol(None)})
+            first_set.update(set(first_of_sym) - {CFSymbol(None)})
 
             # we can only keep adding (i.e. add First(C) if First(B) contained epsilon)
-            if not CFSymbol(None) in first_of_symbol:
+            if not CFSymbol(None) in first_of_sym:
                 break
 
             # if we have reached the end of the to_sequence and (from above) first(X) contains epsilon, we add epsilon
             if i == len(to_sequence) - 1:
                 first_set.add(CFSymbol(None))
-
+    
+    known_first_sets[symbol] = list(first_set)
     return list(first_set)
 
 
@@ -151,7 +128,7 @@ def extract_LL1_first_sets(
     symbols = get_non_terminals(grammar) + get_terminals(grammar)
 
     for symbol in symbols:
-        first_sets[symbol] = LL1_first(symbol, grammar, first_sets)
+        LL1_first(symbol, grammar, first_sets)
 
     return first_sets
 
@@ -182,27 +159,32 @@ def LL1_follow(
         from_symbol = production.from_symbol
         to_sequence = production.to_sequence
 
-        symbol_pos = to_sequence.index(symbol)
+        positions = [i for i, sym in enumerate(to_sequence) if sym == symbol]
+        for symbol_pos in positions:
+            # Follow(A) += Follow(B) if B -> w A and B != A
+            if symbol_pos == len(to_sequence) - 1:
+                if from_symbol != symbol:
+                    follow_set.update(
+                        LL1_follow(
+                            from_symbol, grammar, known_first_sets, known_follow_sets
+                        )
+                    )
+                continue
 
-        # Follow(A) += Follow(B) if B -> w A and B != A
-        if symbol_pos == len(to_sequence) - 1:
-            if from_symbol != symbol:
-                follow_set.update(LL1_follow(from_symbol, grammar, known_first_sets, known_follow_sets))
-            continue
+            # we now know there must be a 'next symbol' from here onwards:
+            next_symbol = to_sequence[symbol_pos + 1]
+            first_next = LL1_first(next_symbol, grammar, known_first_sets)
 
-        # we now know there must be a 'next symbol' from here onwards:
-        next_symbol = to_sequence[symbol_pos + 1]
-        first_next = LL1_first(next_symbol, grammar, known_first_sets)
+            # Follow(A) += Follow(B) if B -> a A w, and eps in First(w) -- (as if w can derive to nothing, a string Following B can also Follow A)
+            if CFSymbol(None) in first_next:
+                follow_set.update(
+                    LL1_follow(from_symbol, grammar, known_first_sets, known_follow_sets)
+                )
 
-        # Follow(A) += Follow(B) if B -> a A w, and eps in First(w) -- (as if w can derive to nothing, a string Following B can also Follow A)
-        if CFSymbol(None) in first_next:
-            follow_set.update(
-                LL1_follow(from_symbol, grammar, known_first_sets, known_follow_sets)
-            )
+            # Follow(A) += First(w) - {eps} if B -> a A w
+            follow_set.update(set(first_next) - {CFSymbol(None)})
 
-        # Follow(A) += First(w) - {eps} if B -> a A w
-        follow_set.update(set(first_next) - {CFSymbol(None)})
-
+    known_follow_sets[symbol] = list(follow_set)
     return list(follow_set)
 
 
@@ -210,50 +192,47 @@ def extract_LL1_follow_sets(
     grammar: list[CFProduction], first_sets: dict[CFSymbol, list[CFSymbol]]
 ) -> dict:
     follow_sets: dict[CFSymbol, list[CFSymbol]] = {}
-    symbols = get_non_terminals(grammar) # we only define follow for non-terminals
+    symbols = get_non_terminals(grammar)  # we only define follow for non-terminals
 
     for symbol in symbols:
-        follow_sets[symbol] = LL1_follow(symbol, grammar, first_sets, follow_sets)
-        # print(follow_sets)
-    
+        LL1_follow(symbol, grammar, first_sets, follow_sets)
+
     return follow_sets
 
 
-def build_LL1_table(grammar: list[CFProduction]) -> dict:
-    pass
+def build_LL1_table(
+    grammar: list[CFProduction],
+    first_sets: dict[CFSymbol, list[CFSymbol]],
+    follow_sets: dict[CFSymbol, list[CFSymbol]],
+) -> dict:
+    """Construct an LL(1) Parse Table given a grammar, first_sets, and follow_sets
+    """
+    
+    # our table is a mapping of ()
+    ll1_table: dict[CFSymbol, dict[CFSymbol, CFProduction]] = {}
+    
+    for production in grammar:
+        
+        if production.from_symbol not in ll1_table:
+            ll1_table[production.from_symbol] = {}
+        
+        first_set = set()
+        for symbol in production.to_sequence:
+            first_set.update(first_sets[symbol])
+            if CFSymbol(None) not in first_sets[symbol]:
+                break
+        
+        for terminal in first_set - {CFSymbol(None)}:
+            if terminal not in ll1_table[production.from_symbol]:
+                ll1_table[production.from_symbol][terminal] = production
+            else:
+                raise ValueError(f"Conflict in LL(1) table at {production.from_symbol}, {terminal}")
+            
+        if CFSymbol(None) in first_set:
+                for terminal in follow_sets[production.from_symbol]:
+                    if terminal not in ll1_table[production.from_symbol]:
+                        ll1_table[production.from_symbol][terminal] = production
+                    else:
+                        raise ValueError(f"Conflict in LL(1) table at {production.from_symbol}, {terminal}")
 
-
-first = extract_LL1_first_sets(test_grammar)
-follow = extract_LL1_follow_sets(test_grammar, first)
-print("FIRST")
-print(first)
-print("FOLLOW")
-print(follow)
-
-class ASTNodeType(Enum):
-    PROGRAM = ("PROGRAM",)
-    OPERATION = ("OPERATION",)
-    ASSIGNMENT = ("ASSIGNMENT",)
-    BIN_OPERATION = ("BINARY OPERATION",)
-    UN_OPERATION = ("UNARY OPERATION",)
-    VALUE = ("VALUE",)
-    L_VALUE = ("LEFT VALUE",)
-    R_VALUE = ("RIGHT VALUE",)
-    BIN_CALLABLE = ("BINARY CALLABLE",)
-    UN_CALLABLE = "UNARY CALLABLE"
-
-
-class ASTNode:
-    def __init__(
-        self, type: ASTNodeType, children: list["ASTNode"], data: dict
-    ) -> None:
-        """an ASTNode is a node in a parse tree used to define the semantics of a program
-
-        Args:
-            type (ASTNodeType): The kind of node this is - i.e. what this node 'means' to the tree and execution
-            children (list[ASTNode]): The children of this node (note: for some node types, order might matter)
-            data (dict): The data associated with this node
-        """
-        self.type = type
-        self.children = children
-        self.data = data
+    return ll1_table
