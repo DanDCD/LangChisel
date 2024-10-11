@@ -4,6 +4,7 @@ from typing import Callable
 
 
 class TokenType(Enum):
+    EOS = "$" # end of string token
     WHITE_SPACE = "WHITE_SPACE"
     LINE_BREAK = "LINE_BREAK"
     VAR_DECLARATION = "VAR"
