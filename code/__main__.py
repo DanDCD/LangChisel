@@ -12,21 +12,21 @@ if __name__ == "__main__":
     from LangChisel.parse import *
     
     # a mapping of compiled regular expressions to their respective tokentype enums
-    regex_to_tokentype: dict[re.Pattern, TokenType] = {
-        re.compile(r"\s+") : TokenType.WHITE_SPACE,
-        re.compile(r";"): TokenType.LINE_BREAK,
-        re.compile(r"=") : TokenType.ASSIGN,
-        re.compile(r"\+") : TokenType.ADD,
-        re.compile(r"var") : TokenType.VAR_DECLARATION,
-        re.compile(r"\d+") : TokenType.NUM,
-        re.compile(r"\w+") : TokenType.IDENTIFIER,
+    regex_to_tokentype: dict[re.Pattern, TokenTag] = {
+        re.compile(r"\s+") : TokenTag("WHITE_SPACE"),
+        re.compile(r";"): TokenTag("LINE_BREAK"),
+        re.compile(r"=") : TokenTag("ASSIGN"),
+        re.compile(r"\+") : TokenTag("ADD"),
+        re.compile(r"var") : TokenTag("VAR_DECL"),
+        re.compile(r"\d+") : TokenTag("NUM"),
+        re.compile(r"\w+") : TokenTag("IDENTIFIER"),
     }
 
 
     # a mapping of tokentypes to callables used to extract data from a lexeme of this type
     tokentype_to_data_extraction: dict[re.Pattern, Callable[[str], any]] = {
-        TokenType.IDENTIFIER: lambda substr :  str(substr),
-        TokenType.NUM: lambda substr : int(substr)
+        TokenTag("IDENTIFIER"): lambda substr :  str(substr),
+        TokenTag("NUM"): lambda substr : int(substr)
     }
 
 

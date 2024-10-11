@@ -1,49 +1,11 @@
 import re
-from enum import Enum
 from typing import Callable
-
-
-class TokenType(Enum):
-    EOS = "$" # end of string token
-    WHITE_SPACE = "WHITE_SPACE"
-    LINE_BREAK = "LINE_BREAK"
-    VAR_DECLARATION = "VAR"
-    IDENTIFIER = "IDENTIFIER"
-    ASSIGN = "ASSIGN"
-    ADD = "ADD"
-    NUM = "NUM"
-    EOF = "EOF"
-    t= "t"
-    u = "u"
-    v = "v"
-
-
-class Token:
-    def __init__(self, type: TokenType, value: any) -> None:
-        """A Token a meaningful collection of characters that carry semantic weight to the language
-
-        Args:
-            type (TokenType): The type of token this is
-            value (any): Extra information (if any) to be associated with this token
-        """
-        self.type = type  # the type of this token
-        self.value = value  # data associated with this token
-
-    def __repr__(self) -> str:
-        return f"(Type: {self.type}, Value:{self.value})"
-
-    def __eq__(self, other):
-        if isinstance(other, Token):
-            return self.type == other.type and self.value == other.value
-        return False
-
-    def __hash__(self):
-        return hash((self.type, self.value))
+from .token import *
 
 
 def check_for_match(
-    substring: str, pattern_to_type: dict[re.Pattern, TokenType]
-) -> TokenType:
+    substring: str, pattern_to_type: dict[re.Pattern, TokenTag]
+) -> TokenTag:
     """checks if the substring matches a lexeme, if so returns the token type
 
     Args:
@@ -60,8 +22,8 @@ def check_for_match(
 
 
 def find_lexemes(
-    string: str, pattern_to_type: dict[re.Pattern, TokenType]
-) -> list[(str, TokenType)]:
+    string: str, pattern_to_type: dict[re.Pattern, TokenTag]
+) -> list[(str, TokenTag)]:
     """Identifies Lexemes in messy text
 
     Args:
@@ -70,7 +32,7 @@ def find_lexemes(
     Returns
         list[(str, TokenType)]: a list of substring lexemes and the associated token types
     """
-    foundLexemes: list[(str, TokenType)] = []
+    foundLexemes: list[(str, TokenTag)] = []
     front = 0
     back = len(string)
     while back > front:
@@ -82,19 +44,20 @@ def find_lexemes(
             back = len(string)
         else:
             back -= 1
-    foundLexemes.append(("", TokenType.EOF))
+    foundLexemes.append(("", TokenTag("EOF")))
     return foundLexemes
 
 
 def construct_tokens(
-    lexemes: list[(str, TokenType)],
-    type_to_extractor: dict[re.Pattern, Callable[[str], any]],
+    lexemes: list[(str, TokenTag)],
+    type_to_extractor: dict[TokenTag, Callable[[str], any]],
 ) -> list[Token]:
-    """_summary_
+    """takes a list of lexemes and turns them into tokens
 
     Args:
         lexemes (list[(str, TokenType)]): a list of substring lexemes and the associated token types
-
+        type_to_extractor (dict[TokenType, Callble[[str], any]]): a mapping of TokenType to a lambda that can be used to extract data from said TokenType
+        
     Returns:
         list[Token]: a list of tokens
     """

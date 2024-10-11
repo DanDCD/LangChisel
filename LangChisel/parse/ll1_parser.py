@@ -1,9 +1,9 @@
-from LangChisel.lex.greedy_backtrack_lexer import Token, TokenType
+from LangChisel.lex.greedy_backtrack_lexer import Token, TokenTag
 from enum import Enum
 
 
 class CFSymbol:
-    def __init__(self, value: str | TokenType) -> None:
+    def __init__(self, value: str | TokenTag) -> None:
         """A Single Context Free Symbol
 
         Args:
@@ -55,9 +55,9 @@ class CFProduction:
 symbol_S = CFSymbol("S")
 symbol_A = CFSymbol("A")
 symbol_B = CFSymbol("B")
-symbol_t = CFSymbol(TokenType.t)
-symbol_u = CFSymbol(TokenType.u)
-symbol_v = CFSymbol(TokenType.v)
+symbol_t = CFSymbol(TokenTag("t"))
+symbol_u = CFSymbol(TokenTag("u"))
+symbol_v = CFSymbol(TokenTag("v"))
 symbol_epsilon = CFSymbol(None)
 
 test_grammar = [
@@ -86,7 +86,7 @@ def get_terminals(grammar: list[CFProduction]) -> list[CFSymbol]:
 
 def is_terminal(symbol: CFSymbol) -> bool:
     """ """
-    return isinstance(symbol.value, TokenType)
+    return isinstance(symbol.value, TokenTag)
 
 
 def LL1_first(
@@ -171,7 +171,7 @@ def LL1_follow(
     follow_set = set()
     # if symbol is start symbol, add $ (the end of string symbol)
     if symbol == CFSymbol("S"):
-        follow_set.add(CFSymbol(TokenType.EOS))
+        follow_set.add(CFSymbol(TokenTag("EOS")))
 
     # this time, relevant productions for symbol A, are those where X -> "..."A"..."
     relevant_productions = [
