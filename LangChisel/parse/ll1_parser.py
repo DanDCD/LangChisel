@@ -74,7 +74,7 @@ def LL1_first(
     grammar: list[CFProduction],
     known_first_sets: dict[CFSymbol, list[CFSymbol]],
 ):
-    """Find the set of symbols that may appear in the front of a string derived from A
+    """Find the set of symbols that may appear at the start of a string derived from A
     That is, First(A) = { t | A->...->tW for some string w}
     First(A) will include epsilon, only if A can produce epsilon/the empty string as a complete derivation of A.
 
@@ -102,20 +102,21 @@ def LL1_first(
         # should never have a production that does not contain a single derived symbol
         assert len(to_sequence) > 0
 
-        # First(A) += First(B) + First(C) if A -> B C and epsilon in B OR First(A) += First(B) if A -> A B
+        # First(A) += First(B) + First(C) if (A -> B C) and (epsilon in B)
+        # OR First(A) += First(B) if A -> A B
         for i, sym in enumerate(to_sequence):
-            first_of_sym = LL1_first(sym, grammar, known_first_sets)
             # add all terminals in First(X) other than epsilon
+            first_of_sym = LL1_first(sym, grammar, known_first_sets)
             first_set.update(set(first_of_sym) - {CFSymbol(None)})
 
-            # we can only keep adding (i.e. add First(C) if First(B) contained epsilon)
+            # if sym cannot derive epsilon, then we should not add the first of the next set (i.e. First(C)) to our first_set
             if not CFSymbol(None) in first_of_sym:
                 break
 
             # if we have reached the end of the to_sequence and (from above) first(X) contains epsilon, we add epsilon
             if i == len(to_sequence) - 1:
                 first_set.add(CFSymbol(None))
-    
+
     known_first_sets[symbol] = list(first_set)
     return list(first_set)
 
@@ -156,9 +157,11 @@ def LL1_follow(
     ]
 
     for production in relevant_productions:
+        # from_symbol -> to_sequence
         from_symbol = production.from_symbol
         to_sequence = production.to_sequence
 
+        # find all occurrences of the symbol in this production
         positions = [i for i, sym in enumerate(to_sequence) if sym == symbol]
         for symbol_pos in positions:
             # Follow(A) += Follow(B) if B -> w A and B != A
@@ -178,7 +181,9 @@ def LL1_follow(
             # Follow(A) += Follow(B) if B -> a A w, and eps in First(w) -- (as if w can derive to nothing, a string Following B can also Follow A)
             if CFSymbol(None) in first_next:
                 follow_set.update(
-                    LL1_follow(from_symbol, grammar, known_first_sets, known_follow_sets)
+                    LL1_follow(
+                        from_symbol, grammar, known_first_sets, known_follow_sets
+                    )
                 )
 
             # Follow(A) += First(w) - {eps} if B -> a A w
@@ -205,34 +210,37 @@ def build_LL1_table(
     first_sets: dict[CFSymbol, list[CFSymbol]],
     follow_sets: dict[CFSymbol, list[CFSymbol]],
 ) -> dict:
-    """Construct an LL(1) Parse Table given a grammar, first_sets, and follow_sets
-    """
-    
+    """Construct an LL(1) Parse Table given a grammar, first_sets, and follow_sets"""
+
     # our table is a mapping of ()
     ll1_table: dict[CFSymbol, dict[CFSymbol, CFProduction]] = {}
-    
+
     for production in grammar:
-        
+
         if production.from_symbol not in ll1_table:
             ll1_table[production.from_symbol] = {}
-        
+
         first_set = set()
         for symbol in production.to_sequence:
             first_set.update(first_sets[symbol])
             if CFSymbol(None) not in first_sets[symbol]:
                 break
-        
+
         for terminal in first_set - {CFSymbol(None)}:
             if terminal not in ll1_table[production.from_symbol]:
                 ll1_table[production.from_symbol][terminal] = production
             else:
-                raise ValueError(f"Conflict in LL(1) table at {production.from_symbol}, {terminal}")
-            
+                raise ValueError(
+                    f"Conflict in LL(1) table at {production.from_symbol}, {terminal}"
+                )
+
         if CFSymbol(None) in first_set:
-                for terminal in follow_sets[production.from_symbol]:
-                    if terminal not in ll1_table[production.from_symbol]:
-                        ll1_table[production.from_symbol][terminal] = production
-                    else:
-                        raise ValueError(f"Conflict in LL(1) table at {production.from_symbol}, {terminal}")
+            for terminal in follow_sets[production.from_symbol]:
+                if terminal not in ll1_table[production.from_symbol]:
+                    ll1_table[production.from_symbol][terminal] = production
+                else:
+                    raise ValueError(
+                        f"Conflict in LL(1) table at {production.from_symbol}, {terminal}"
+                    )
 
     return ll1_table
