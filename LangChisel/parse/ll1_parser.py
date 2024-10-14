@@ -212,7 +212,7 @@ def build_LL1_table(
 ) -> dict:
     """Construct an LL(1) Parse Table given a grammar, first_sets, and follow_sets"""
 
-    # our table is a mapping of ()
+    # our table is a mapping of (non-terminal, terminal) -> production the parser should use when terminal is front of input and non-terminal top of stack
     ll1_table: dict[CFSymbol, dict[CFSymbol, CFProduction]] = {}
 
     for production in grammar:
@@ -220,12 +220,14 @@ def build_LL1_table(
         if production.from_symbol not in ll1_table:
             ll1_table[production.from_symbol] = {}
 
+        # we keep adding to the first set, by iterating over symbols and fetching their first sets until we stop getting: (first(symbol) has epsilon)
         first_set = set()
         for symbol in production.to_sequence:
             first_set.update(first_sets[symbol])
             if CFSymbol(None) not in first_sets[symbol]:
                 break
-
+        # for every terminal in the first set, we assert that (non-terminal, terminal -> production) does not already exist
+        # if we are correct, we add the mapping and repeat
         for terminal in first_set - {CFSymbol(None)}:
             if terminal not in ll1_table[production.from_symbol]:
                 ll1_table[production.from_symbol][terminal] = production
@@ -233,7 +235,8 @@ def build_LL1_table(
                 raise ValueError(
                     f"Conflict in LL(1) table at {production.from_symbol}, {terminal}"
                 )
-
+        # if the first set contains epsilong (i.e. every symbol in the production can derive epsilon)
+        # we now know that the whole production can be used to derive eps
         if CFSymbol(None) in first_set:
             for terminal in follow_sets[production.from_symbol]:
                 if terminal not in ll1_table[production.from_symbol]:
