@@ -49,6 +49,14 @@ class CFProduction:
         return hash((self.from_symbol, self.to_sequence))
 
 
+class CFGrammar:
+    def __init__(self, productions: list[CFProduction], start_symbol:CFSymbol, epsilon:CFSymbol):
+        """A Context Free Grammar, defined by a series of productions, alongside a start symbol and epsilon"""
+        self.productions = productions
+        self.start_symbol = start_symbol
+        self.epsilon = epsilon
+
+
 def get_non_terminals(grammar: list[CFProduction]) -> list[CFSymbol]:
     """ """
     return list(set([production.from_symbol for production in grammar]))
