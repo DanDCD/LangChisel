@@ -44,7 +44,6 @@ def find_lexemes(
             back = len(string)
         else:
             back -= 1
-    foundLexemes.append(("", TokenTag("EOF")))
     return foundLexemes
 
 

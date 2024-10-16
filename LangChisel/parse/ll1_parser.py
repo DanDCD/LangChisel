@@ -205,13 +205,17 @@ def LL1_follow(
                     break  # if we have reached another intance of the symbol, we can just continue to it in the outer loop
                 # we can add the first set (i.e. First(B)) to the follow set of our symbol (i.e. follow(A))
                 first_curr = known_first_sets[to_sequence[curr_pos]]
-                follow_set.update(set(first_curr) - {grammar.epsilon})    
+                follow_set.update(set(first_curr) - {grammar.epsilon})
                 # if this has epsilon, then we have Follow(A) += First(C) if W -> A B C and First(B) has epsilon
                 epsilon_in_curr_first = grammar.epsilon in first_curr
-                
+
                 # if this is also the last symbol in the sequence, we get Follow(A) += Follow(B) if B -> a A w, and eps in First(w)
                 if curr_pos == len(to_sequence) - 1 and epsilon_in_curr_first:
-                    follow_set.update(LL1_follow(from_symbol, grammar, known_first_sets, known_follow_sets))
+                    follow_set.update(
+                        LL1_follow(
+                            from_symbol, grammar, known_first_sets, known_follow_sets
+                        )
+                    )
 
     known_follow_sets[symbol] = list(follow_set)
     return list(follow_set)
@@ -235,7 +239,7 @@ def build_LL1_table(
     grammar: CFGrammar,
     first_sets: dict[CFSymbol, list[CFSymbol]],
     follow_sets: dict[CFSymbol, list[CFSymbol]],
-) -> dict:
+) -> dict[CFSymbol, dict[CFSymbol, CFProduction]]:
     """Construct an LL(1) Parse Table given a grammar, first_sets, and follow_sets"""
 
     # our table is a mapping of (non-terminal, terminal) -> production the parser should use when terminal is front of input and non-terminal top of stack
@@ -273,3 +277,50 @@ def build_LL1_table(
                     )
 
     return ll1_table
+
+
+class ParseError(Exception):
+    def __init__(self, message):
+        self.message = message
+        super().__init__(self.message)
+
+    def __str__(self):
+        if self.position:
+            return f"Parse Error Raised: {self.message}"
+        return self.message
+
+
+def parse_LL1(
+    tokens: list[Token],
+    grammar: CFGrammar,
+    parse_table: dict[CFSymbol, dict[CFSymbol, CFProduction]],
+):
+    stack: list[CFSymbol] = [grammar.end_of_string, grammar.start_symbol]
+    tokens.append(Token(grammar.end_of_string.value, None))
+    tokens.reverse()
+    
+
+    derivation_sequence: list[CFProduction] = []
+
+    while stack[-1] != grammar.end_of_string:
+        symbol: CFSymbol = stack[-1]
+        token: Token = tokens[-1]
+        token_sym: CFSymbol = CFSymbol(token.tag)
+
+        if symbol == grammar.epsilon:
+            stack.pop()
+        elif is_terminal(symbol) and symbol.value == token.tag:
+            stack.pop()
+            tokens.pop()
+        elif symbol in parse_table and token_sym in parse_table[symbol]:
+            derivation: CFProduction = parse_table[symbol][token_sym]
+            assert symbol == derivation.from_symbol
+            to_seq = derivation.to_sequence.copy()
+            to_seq.reverse()
+            
+            stack.pop()
+            stack += to_seq
+            derivation_sequence.append(derivation)
+        else:
+            raise ParseError("No Valid Next Step for Parser")
+    return derivation_sequence

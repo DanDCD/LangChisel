@@ -87,3 +87,7 @@ if __name__ == "__main__":
     table = build_LL1_table(test_grammar, first_sets, follow_sets)
     print("\nTABLE")
     print(table)
+    
+    derivation_sequence = parse_LL1(tokens, test_grammar, table)
+    print("Derivations:")
+    print(derivation_sequence)
