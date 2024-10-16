@@ -55,10 +55,91 @@ for terminal in get_terminals(test_grammar_1.productions):
 expected_follow_1 = {
     CFSymbol("E"): [test_grammar_1.end_of_string, CFSymbol(TokenTag(")"))],
     CFSymbol("E'"): [test_grammar_1.end_of_string, CFSymbol(TokenTag(")"))],
-    CFSymbol("T"): [test_grammar_1.end_of_string, CFSymbol(TokenTag(")")), CFSymbol(TokenTag("+"))],
-    CFSymbol("T'"): [test_grammar_1.end_of_string, CFSymbol(TokenTag(")")), CFSymbol(TokenTag("+"))],
-    CFSymbol("F"): [test_grammar_1.end_of_string, CFSymbol(TokenTag(")")), CFSymbol(TokenTag("+")), CFSymbol(TokenTag("*"))],
+    CFSymbol("T"): [
+        test_grammar_1.end_of_string,
+        CFSymbol(TokenTag(")")),
+        CFSymbol(TokenTag("+")),
+    ],
+    CFSymbol("T'"): [
+        test_grammar_1.end_of_string,
+        CFSymbol(TokenTag(")")),
+        CFSymbol(TokenTag("+")),
+    ],
+    CFSymbol("F"): [
+        test_grammar_1.end_of_string,
+        CFSymbol(TokenTag(")")),
+        CFSymbol(TokenTag("+")),
+        CFSymbol(TokenTag("*")),
+    ],
 }
+
+# S -> A
+# A -> B A'
+# A' -> + B A'
+# A' -> eps
+# B -> C B'
+# B' -> * C B'
+# B' -> eps
+# C -> ( A )
+# C -> id
+test_grammar_2 = CFGrammar(
+    [
+        CFProduction(CFSymbol("S"), [CFSymbol("A")]),
+        CFProduction(CFSymbol("A"), [CFSymbol("B"), CFSymbol("A'")]),
+        CFProduction(
+            CFSymbol("A'"), [CFSymbol(TokenTag("+")), CFSymbol("B"), CFSymbol("A'")]
+        ),
+        CFProduction(CFSymbol("A'"), [CFSymbol(None)]),
+        CFProduction(CFSymbol("B"), [CFSymbol("C"), CFSymbol("B'")]),
+        CFProduction(
+            CFSymbol("B'"), [CFSymbol(TokenTag("*")), CFSymbol("C"), CFSymbol("B'")]
+        ),
+        CFProduction(CFSymbol("B'"), [CFSymbol(None)]),
+        CFProduction(
+            CFSymbol("C"),
+            [CFSymbol(TokenTag("(")), CFSymbol("A"), CFSymbol(TokenTag(")"))],
+        ),
+        CFProduction(CFSymbol("C"), [CFSymbol(TokenTag("id"))]),
+    ],
+    CFSymbol("S"),
+    CFSymbol(None),
+    CFSymbol("$"),
+)
+
+expected_first_2 = {
+    CFSymbol("S"): [CFSymbol(TokenTag("(")), CFSymbol(TokenTag("id"))],
+    CFSymbol("A"): [CFSymbol(TokenTag("(")), CFSymbol(TokenTag("id"))],
+    CFSymbol("A'"): [CFSymbol(TokenTag("+")), CFSymbol(None)],
+    CFSymbol("B"): [CFSymbol(TokenTag("(")), CFSymbol(TokenTag("id"))],
+    CFSymbol("B'"): [CFSymbol(TokenTag("*")), CFSymbol(None)],
+    CFSymbol("C"): [CFSymbol(TokenTag("(")), CFSymbol(TokenTag("id"))],
+    test_grammar_2.epsilon: [test_grammar_2.epsilon],
+}
+for terminal in get_terminals(test_grammar_2.productions):
+    expected_first_2[terminal] = [terminal]
+
+expected_follow_2 = {
+    CFSymbol("S"): [test_grammar_2.end_of_string],
+    CFSymbol("A"): [CFSymbol(TokenTag(")")), test_grammar_2.end_of_string],
+    CFSymbol("A'"): [CFSymbol(TokenTag(")")), test_grammar_2.end_of_string],
+    CFSymbol("B"): [
+        CFSymbol(TokenTag("+")),
+        CFSymbol(TokenTag(")")),
+        test_grammar_2.end_of_string,
+    ],
+    CFSymbol("B'"): [
+        CFSymbol(TokenTag("+")),
+        CFSymbol(TokenTag(")")),
+        test_grammar_2.end_of_string,
+    ],
+    CFSymbol("C"): [
+        CFSymbol(TokenTag("+")),
+        CFSymbol(TokenTag("*")),
+        CFSymbol(TokenTag(")")),
+        test_grammar_2.end_of_string,
+    ],
+}
+
 
 def test_first_1():
     first_sets = extract_LL1_first_sets(test_grammar_1)
@@ -74,12 +155,37 @@ def test_first_1():
 
 
 def test_follow_1():
-    follow_sets = extract_LL1_follow_sets(test_grammar_1, expected_follow_1)
-    
+    follow_sets = extract_LL1_follow_sets(test_grammar_1, expected_first_1)
+
     print("\nFOLLOW sets:")
     for sym, follow in follow_sets.items():
         print(f"{sym.value}: {[s.value for s in follow]}")
-    
+
     assert set(follow_sets.keys()) == set(expected_follow_1.keys())
     for symbol in follow_sets:
         assert set(follow_sets[symbol]) == set(expected_follow_1[symbol])
+
+
+def test_first_2():
+    first_sets = extract_LL1_first_sets(test_grammar_2)
+
+    print("FIRST sets:")
+    for sym, first in first_sets.items():
+        print(f"{sym.value}: {[s.value for s in first]}")
+
+    # compare first sets and expected first sets
+    assert set(first_sets.keys()) == set(expected_first_2.keys())
+    for symbol in first_sets:
+        assert set(first_sets[symbol]) == set(expected_first_2[symbol])
+
+
+def test_follow_2():
+    follow_sets = extract_LL1_follow_sets(test_grammar_2, expected_first_2)
+
+    print("\nFOLLOW sets:")
+    for sym, follow in follow_sets.items():
+        print(f"{sym.value}: {[s.value for s in follow]}")
+
+    assert set(follow_sets.keys()) == set(expected_follow_2.keys())
+    for symbol in follow_sets:
+        assert set(follow_sets[symbol]) == set(expected_follow_2[symbol])

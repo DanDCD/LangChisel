@@ -109,7 +109,9 @@ def LL1_first(
 
     first_set = set()  # this will be the set of 'First(symbol)' we will return
     relevant_productions = [
-        production for production in grammar.productions if production.from_symbol == symbol
+        production
+        for production in grammar.productions
+        if production.from_symbol == symbol
     ]
 
     for production in relevant_productions:
@@ -141,7 +143,9 @@ def extract_LL1_first_sets(
 ) -> dict[CFSymbol, list[CFSymbol]]:
     """Calculate the First sets for all symbols in the grammar"""
     first_sets: dict[CFSymbol, list[CFSymbol]] = {}
-    symbols = get_non_terminals(grammar.productions) + get_terminals(grammar.productions)
+    symbols = get_non_terminals(grammar.productions) + get_terminals(
+        grammar.productions
+    )
 
     for symbol in symbols:
         LL1_first(symbol, grammar, first_sets)
@@ -168,7 +172,9 @@ def LL1_follow(
 
     # this time, relevant productions for symbol A, are those where X -> "..."A"..."
     relevant_productions = [
-        production for production in grammar.productions if symbol in production.to_sequence
+        production
+        for production in grammar.productions
+        if symbol in production.to_sequence
     ]
 
     for production in relevant_productions:
@@ -187,23 +193,25 @@ def LL1_follow(
                             from_symbol, grammar, known_first_sets, known_follow_sets
                         )
                     )
-                continue
+                continue  # we are now finished with this derivation, so go to the next
 
-            # we now know there must be a 'next symbol' from here onwards:
-            next_symbol = to_sequence[symbol_pos + 1]
-            # TODO: this needs to be iterated over all symbols after next too
-            first_next = LL1_first(next_symbol, grammar, known_first_sets)
-
-            # Follow(A) += Follow(B) if B -> a A w, and eps in First(w) -- (as if w can derive to nothing, a string Following B can also Follow A)
-            if grammar.epsilon in first_next:
-                follow_set.update(
-                    LL1_follow(
-                        from_symbol, grammar, known_first_sets, known_follow_sets
-                    )
-                )
-
-            # Follow(A) += First(w) - {eps} if B -> a A w
-            follow_set.update(set(first_next) - {grammar.epsilon})
+            # Follow(A) += First(B) if W -> A B C
+            # Follow(A) += First(C) if W -> A B C and First(B) has epsilon
+            curr_pos = symbol_pos
+            epsilon_in_curr_first = True
+            while epsilon_in_curr_first and curr_pos < len(to_sequence) - 1:
+                curr_pos += 1
+                if curr_pos in positions:
+                    break  # if we have reached another intance of the symbol, we can just continue to it in the outer loop
+                # we can add the first set (i.e. First(B)) to the follow set of our symbol (i.e. follow(A))
+                first_curr = known_first_sets[to_sequence[curr_pos]]
+                follow_set.update(set(first_curr) - {grammar.epsilon})    
+                # if this has epsilon, then we have Follow(A) += First(C) if W -> A B C and First(B) has epsilon
+                epsilon_in_curr_first = grammar.epsilon in first_curr
+                
+                # if this is also the last symbol in the sequence, we get Follow(A) += Follow(B) if B -> a A w, and eps in First(w)
+                if curr_pos == len(to_sequence) - 1 and epsilon_in_curr_first:
+                    follow_set.update(LL1_follow(from_symbol, grammar, known_first_sets, known_follow_sets))
 
     known_follow_sets[symbol] = list(follow_set)
     return list(follow_set)
@@ -213,7 +221,9 @@ def extract_LL1_follow_sets(
     grammar: CFGrammar, first_sets: dict[CFSymbol, list[CFSymbol]]
 ) -> dict:
     follow_sets: dict[CFSymbol, list[CFSymbol]] = {}
-    symbols = get_non_terminals(grammar.productions)  # we only define follow for non-terminals
+    symbols = get_non_terminals(
+        grammar.productions
+    )  # we only define follow for non-terminals
 
     for symbol in symbols:
         LL1_follow(symbol, grammar, first_sets, follow_sets)
