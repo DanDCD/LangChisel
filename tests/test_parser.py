@@ -199,6 +199,72 @@ expected_follow_2 = {
     ],
 }
 
+expected_table_2 = {
+    # Entry for Non-terminal S
+    (CFSymbol("S")): {
+        (CFSymbol(TokenTag("id"))): CFProduction(
+            CFSymbol("S"), [CFSymbol("A")]
+        ),
+        (CFSymbol(TokenTag("("))): CFProduction(
+            CFSymbol("S"), [CFSymbol("A")]
+        ),
+    },
+    # Entry for Non-terminal A
+    (CFSymbol("A")): {
+        (CFSymbol(TokenTag("id"))): CFProduction(
+            CFSymbol("A"), [CFSymbol("B"), CFSymbol("A'")]
+        ),
+        (CFSymbol(TokenTag("("))): CFProduction(
+            CFSymbol("A"), [CFSymbol("B"), CFSymbol("A'")]
+        ),
+    },
+    # Entry for Non-terminal A'
+    (CFSymbol("A'")): {
+        (CFSymbol(TokenTag("+"))): CFProduction(
+            CFSymbol("A'"), [CFSymbol(TokenTag("+")), CFSymbol("B"), CFSymbol("A'")]
+        ),
+        (CFSymbol(TokenTag(")"))): CFProduction(
+            CFSymbol("A'"), [CFSymbol(None)]
+        ),  # Represents ε
+        (CFSymbol("$")): CFProduction(
+            CFSymbol("A'"), [CFSymbol(None)]
+        ),  # Represents ε
+    },
+    # Entry for Non-terminal B
+    (CFSymbol("B")): {
+        (CFSymbol(TokenTag("id"))): CFProduction(
+            CFSymbol("B"), [CFSymbol("C"), CFSymbol("B'")]
+        ),
+        (CFSymbol(TokenTag("("))): CFProduction(
+            CFSymbol("B"), [CFSymbol("C"), CFSymbol("B'")]
+        ),
+    },
+    # Entry for Non-terminal B'
+    (CFSymbol("B'")): {
+        (CFSymbol(TokenTag("*"))): CFProduction(
+            CFSymbol("B'"), [CFSymbol(TokenTag("*")), CFSymbol("C"), CFSymbol("B'")]
+        ),
+        (CFSymbol(TokenTag("+"))): CFProduction(
+            CFSymbol("B'"), [CFSymbol(None)]
+        ),  # Represents ε
+        (CFSymbol(TokenTag(")"))): CFProduction(
+            CFSymbol("B'"), [CFSymbol(None)]
+        ),  # Represents ε
+        (CFSymbol("$")): CFProduction(
+            CFSymbol("B'"), [CFSymbol(None)]
+        ),  # Represents ε
+    },
+    # Entry for Non-terminal C
+    (CFSymbol("C")): {
+        (CFSymbol(TokenTag("id"))): CFProduction(
+            CFSymbol("C"), [CFSymbol(TokenTag("id"))]
+        ),
+        (CFSymbol(TokenTag("("))): CFProduction(
+            CFSymbol("C"),
+            [CFSymbol(TokenTag("(")), CFSymbol("A"), CFSymbol(TokenTag(")"))],
+        ),
+    },
+}
 
 def test_first_1():
     first_sets = extract_LL1_first_sets(test_grammar_1)
@@ -262,3 +328,16 @@ def test_follow_2():
     assert set(follow_sets.keys()) == set(expected_follow_2.keys())
     for symbol in follow_sets:
         assert set(follow_sets[symbol]) == set(expected_follow_2[symbol])
+
+def test_table_2():
+    table = build_LL1_table(test_grammar_2, expected_first_2, expected_follow_2)
+    assert set(expected_table_2.keys()) == set(table.keys())
+    for non_terminal in expected_table_2:
+        expected = set(expected_table_2[non_terminal].keys())
+        observed = set(table[non_terminal].keys())
+        assert expected == observed
+        for terminal in expected_table_2[non_terminal]:
+            assert (
+                expected_table_2[non_terminal][terminal]
+                == table[non_terminal][terminal]
+            )
