@@ -73,6 +73,65 @@ expected_follow_1 = {
     ],
 }
 
+expected_table_1 = {
+    # Entry for Non-terminal E
+    (CFSymbol("E")): {
+        (CFSymbol(TokenTag("id"))): CFProduction(
+            CFSymbol("E"), [CFSymbol("T"), CFSymbol("E'")]
+        ),
+        (CFSymbol(TokenTag("("))): CFProduction(
+            CFSymbol("E"), [CFSymbol("T"), CFSymbol("E'")]
+        ),
+    },
+    # Entry for Non-terminal E'
+    (CFSymbol("E'")): {
+        (CFSymbol(TokenTag("+"))): CFProduction(
+            CFSymbol("E'"), [CFSymbol(TokenTag("+")), CFSymbol("T"), CFSymbol("E'")]
+        ),
+        (CFSymbol(TokenTag(")"))): CFProduction(
+            CFSymbol("E'"), [CFSymbol(None)]
+        ),  # Represents ε
+        (CFSymbol("$")): CFProduction(
+            CFSymbol("E'"), [CFSymbol(None)]
+        ),  # Represents ε
+    },
+    # Entry for Non-terminal T
+    (CFSymbol("T")): {
+        (CFSymbol(TokenTag("id"))): CFProduction(
+            CFSymbol("T"), [CFSymbol("F"), CFSymbol("T'")]
+        ),
+        (CFSymbol(TokenTag("("))): CFProduction(
+            CFSymbol("T"), [CFSymbol("F"), CFSymbol("T'")]
+        ),
+    },
+    # Entry for Non-terminal T'
+    (CFSymbol("T'")): {
+        (CFSymbol(TokenTag("*"))): CFProduction(
+            CFSymbol("T'"), [CFSymbol(TokenTag("*")), CFSymbol("F"), CFSymbol("T'")]
+        ),
+        (CFSymbol(TokenTag("+"))): CFProduction(
+            CFSymbol("T'"), [CFSymbol(None)]
+        ),  # Represents ε
+        (CFSymbol(TokenTag(")"))): CFProduction(
+            CFSymbol("T'"), [CFSymbol(None)]
+        ),  # Represents ε
+        (CFSymbol("$")): CFProduction(
+            CFSymbol("T'"), [CFSymbol(None)]
+        ),  # Represents ε
+    },
+    # Entry for Non-terminal F
+    (CFSymbol("F")): {
+        (CFSymbol(TokenTag("id"))): CFProduction(
+            CFSymbol("F"), [CFSymbol(TokenTag("id"))]
+        ),
+        (CFSymbol(TokenTag("("))): CFProduction(
+            CFSymbol("F"),
+            [CFSymbol(TokenTag("(")), CFSymbol("E"), CFSymbol(TokenTag(")"))],
+        ),
+    },
+}
+
+
 # S -> A
 # A -> B A'
 # A' -> + B A'
@@ -164,6 +223,20 @@ def test_follow_1():
     assert set(follow_sets.keys()) == set(expected_follow_1.keys())
     for symbol in follow_sets:
         assert set(follow_sets[symbol]) == set(expected_follow_1[symbol])
+
+
+def test_table_1():
+    table = build_LL1_table(test_grammar_1, expected_first_1, expected_follow_1)
+    assert set(expected_table_1.keys()) == set(table.keys())
+    for non_terminal in expected_table_1:
+        expected = set(expected_table_1[non_terminal].keys())
+        observed = set(table[non_terminal].keys())
+        assert expected == observed
+        for terminal in expected_table_1[non_terminal]:
+            assert (
+                expected_table_1[non_terminal][terminal]
+                == table[non_terminal][terminal]
+            )
 
 
 def test_first_2():
