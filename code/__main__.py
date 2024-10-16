@@ -37,7 +37,7 @@ if __name__ == "__main__":
         re.compile(r"u"): TokenTag("u"),
         re.compile(r"v"): TokenTag("v"),
     }
-    
+
     tokentype_to_data_extraction = {}
 
     lexemes = find_lexemes(source_code, regex_to_tokentype)
@@ -58,17 +58,23 @@ if __name__ == "__main__":
     symbol_u = CFSymbol(TokenTag("u"))
     symbol_v = CFSymbol(TokenTag("v"))
     symbol_epsilon = CFSymbol(None)
+    end_of_string = CFSymbol(TokenTag("EOS"))
 
-    test_grammar = [
-        CFProduction(symbol_S, [symbol_A, symbol_S]),
-        CFProduction(symbol_S, [symbol_epsilon]),
-        CFProduction(symbol_A, [symbol_t, symbol_B]),
-        CFProduction(symbol_A, [symbol_u]),
-        CFProduction(symbol_B, [symbol_v]),
-    ]
+    test_grammar = CFGrammar(
+        [
+            CFProduction(symbol_S, [symbol_A, symbol_S]),
+            CFProduction(symbol_S, [symbol_epsilon]),
+            CFProduction(symbol_A, [symbol_t, symbol_B]),
+            CFProduction(symbol_A, [symbol_u]),
+            CFProduction(symbol_B, [symbol_v]),
+        ],
+        symbol_S,
+        symbol_epsilon,
+        end_of_string,
+    )
 
     first_sets = extract_LL1_first_sets(test_grammar)
-    follow_sets = extract_LL1_follow_sets(test_grammar, first_sets)     
+    follow_sets = extract_LL1_follow_sets(test_grammar, first_sets)
 
     print("FIRST sets:")
     for sym, first in first_sets.items():
@@ -77,7 +83,7 @@ if __name__ == "__main__":
     print("\nFOLLOW sets:")
     for sym, follow in follow_sets.items():
         print(f"{sym.value}: {[s.value for s in follow]}")
-        
+
     table = build_LL1_table(test_grammar, first_sets, follow_sets)
     print("\nTABLE")
     print(table)
