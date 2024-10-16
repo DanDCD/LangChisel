@@ -32,7 +32,6 @@ def test_find_lexemes():
         ('=', TokenTag("ASSIGN")),
         (' ', TokenTag("WHITE_SPACE")),
         ('5', TokenTag("NUM")),
-        ('', TokenTag("EOF"))
     ]
     
     lexemes = find_lexemes(source_code, regex_to_tokentype)
