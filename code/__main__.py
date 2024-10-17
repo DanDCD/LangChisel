@@ -69,6 +69,11 @@ if __name__ == "__main__":
     print("\nTABLE")
     print(table)
     
-    derivation_sequence = parse_LL1(tokens, test_grammar, table)
+    derivation_sequence = get_LL1_derivation_seq(tokens.copy(), test_grammar, table)
     print("Derivations:")
     print(derivation_sequence)
+    
+    
+    parsed_syntax_tree = parse_sequence(tokens, derivation_sequence)
+    print("Parsed Tree:")
+    print(parsed_syntax_tree)

@@ -322,7 +322,7 @@ def test_table_1():
             )
 
 def test_parse_1():
-    derivation_seq = parse_LL1(test_token_seq_1, test_grammar_1, expected_table_1)
+    derivation_seq = get_LL1_derivation_seq(test_token_seq_1, test_grammar_1, expected_table_1)
     assert derivation_seq == expected_derivations_1
 
 
