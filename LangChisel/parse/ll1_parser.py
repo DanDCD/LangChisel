@@ -355,7 +355,7 @@ class SyntaxNode:
         self.connection_nodes = connection_nodes
 
     def __repr__(self):
-        return f"(SyntaxNode: symbol:{self.symbol}, token:{self.token}, connections:{self.connection_nodes})"
+        return f"(SyntaxNode: symbol:{self.symbol}, token:{self.token}, connections:{self.connection_nodes} end)"
     
     
 
@@ -363,6 +363,7 @@ def parse_sequence(
     tokens: list[Token], derivation_sequence: list[CFProduction]
 ) -> SyntaxNode:
     """Generate a Syntax Tree from a list of Tokens and a series of derivations"""
+
 
     def find_syntax_node_in_order(
         start_node: SyntaxNode, condition: Callable[[SyntaxNode], bool]
@@ -377,6 +378,7 @@ def parse_sequence(
         if condition(start_node):
             return start_node
         return None
+
 
     assert derivation_sequence  # should not be getting empty sequence
     assert tokens
@@ -428,6 +430,7 @@ def parse_sequence(
                 # we are looking for a node where there is an outgoing terminal connection that has no node assigned
                 # AND it is the next node that needs a connection
             )
+
 
         node_with_terminal = terminal_connection_needs_handling()
         while node_with_terminal:
