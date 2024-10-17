@@ -11,25 +11,6 @@ if __name__ == "__main__":
     from LangChisel.lex import *
     from LangChisel.parse import *
 
-    # source_code = "my_num = 5; my_num = 5 + 5;"
-
-    # # a mapping of compiled regular expressions to their respective tokentype enums
-    # regex_to_tokentype: dict[re.Pattern, TokenTag] = {
-    #     re.compile(r"\s+"): TokenTag("WHITE_SPACE"),
-    #     re.compile(r";"): TokenTag("LINE_BREAK"),
-    #     re.compile(r"="): TokenTag("ASSIGN"),
-    #     re.compile(r"\+"): TokenTag("ADD"),
-    #     re.compile(r"var"): TokenTag("VAR_DECL"),
-    #     re.compile(r"\d+"): TokenTag("NUM"),
-    #     re.compile(r"\w+"): TokenTag("IDENTIFIER"),
-    # }
-
-    # # a mapping of tokentypes to callables used to extract data from a lexeme of this type
-    # tokentype_to_data_extraction: dict[re.Pattern, Callable[[str], any]] = {
-    #     TokenTag("IDENTIFIER"): lambda substr: str(substr),
-    #     TokenTag("NUM"): lambda substr: int(substr),
-    # }
-
     source_code = "tvu"
 
     regex_to_tokentype = {

@@ -91,9 +91,7 @@ expected_table_1 = {
         (CFSymbol(TokenTag(")"))): CFProduction(
             CFSymbol("E'"), [CFSymbol(None)]
         ),  # Represents ε
-        (CFSymbol("$")): CFProduction(
-            CFSymbol("E'"), [CFSymbol(None)]
-        ),  # Represents ε
+        (CFSymbol("$")): CFProduction(CFSymbol("E'"), [CFSymbol(None)]),  # Represents ε
     },
     # Entry for Non-terminal T
     (CFSymbol("T")): {
@@ -115,9 +113,7 @@ expected_table_1 = {
         (CFSymbol(TokenTag(")"))): CFProduction(
             CFSymbol("T'"), [CFSymbol(None)]
         ),  # Represents ε
-        (CFSymbol("$")): CFProduction(
-            CFSymbol("T'"), [CFSymbol(None)]
-        ),  # Represents ε
+        (CFSymbol("$")): CFProduction(CFSymbol("T'"), [CFSymbol(None)]),  # Represents ε
     },
     # Entry for Non-terminal F
     (CFSymbol("F")): {
@@ -130,6 +126,34 @@ expected_table_1 = {
         ),
     },
 }
+test_token_seq_1 = [
+    Token(TokenTag("id"), None),
+    Token(TokenTag("+"), None),
+    Token(TokenTag("("), None),
+    Token(TokenTag("id"), None),
+    Token(TokenTag("*"), None),
+    Token(TokenTag("id"), None),
+    Token(TokenTag(")"), None),
+]
+
+expected_derivations_1 = [
+    CFProduction(CFSymbol("E"), [CFSymbol("T"), CFSymbol("E'")]),
+    CFProduction(CFSymbol("T"), [CFSymbol("F"), CFSymbol("T'")]),
+    CFProduction(CFSymbol("F"), [CFSymbol(TokenTag("id"))]),
+    CFProduction(CFSymbol("T'"), [test_grammar_1.epsilon]), 
+    CFProduction(CFSymbol("E'"), [CFSymbol(TokenTag("+")), CFSymbol("T"), CFSymbol("E'")]),
+    CFProduction(CFSymbol("T"), [CFSymbol("F"), CFSymbol("T'")]),
+    CFProduction(CFSymbol("F"), [CFSymbol(TokenTag("(")), CFSymbol("E"), CFSymbol(TokenTag(")"))]),
+    CFProduction(CFSymbol("E"), [CFSymbol("T"), CFSymbol("E'")]),
+    CFProduction(CFSymbol("T"), [CFSymbol("F"), CFSymbol("T'")]),
+    CFProduction(CFSymbol("F"), [CFSymbol(TokenTag("id"))]),
+    CFProduction(CFSymbol("T'"), [CFSymbol(TokenTag("*")), CFSymbol("F"), CFSymbol("T'")]),
+    CFProduction(CFSymbol("F"), [CFSymbol(TokenTag("id"))]),
+    CFProduction(CFSymbol("T'"), [test_grammar_1.epsilon]),
+    CFProduction(CFSymbol("E'"), [test_grammar_1.epsilon]),
+    CFProduction(CFSymbol("T'"), [test_grammar_1.epsilon]),
+    CFProduction(CFSymbol("E'"), [test_grammar_1.epsilon])
+]
 
 
 # S -> A
@@ -202,12 +226,8 @@ expected_follow_2 = {
 expected_table_2 = {
     # Entry for Non-terminal S
     (CFSymbol("S")): {
-        (CFSymbol(TokenTag("id"))): CFProduction(
-            CFSymbol("S"), [CFSymbol("A")]
-        ),
-        (CFSymbol(TokenTag("("))): CFProduction(
-            CFSymbol("S"), [CFSymbol("A")]
-        ),
+        (CFSymbol(TokenTag("id"))): CFProduction(CFSymbol("S"), [CFSymbol("A")]),
+        (CFSymbol(TokenTag("("))): CFProduction(CFSymbol("S"), [CFSymbol("A")]),
     },
     # Entry for Non-terminal A
     (CFSymbol("A")): {
@@ -226,9 +246,7 @@ expected_table_2 = {
         (CFSymbol(TokenTag(")"))): CFProduction(
             CFSymbol("A'"), [CFSymbol(None)]
         ),  # Represents ε
-        (CFSymbol("$")): CFProduction(
-            CFSymbol("A'"), [CFSymbol(None)]
-        ),  # Represents ε
+        (CFSymbol("$")): CFProduction(CFSymbol("A'"), [CFSymbol(None)]),  # Represents ε
     },
     # Entry for Non-terminal B
     (CFSymbol("B")): {
@@ -250,9 +268,7 @@ expected_table_2 = {
         (CFSymbol(TokenTag(")"))): CFProduction(
             CFSymbol("B'"), [CFSymbol(None)]
         ),  # Represents ε
-        (CFSymbol("$")): CFProduction(
-            CFSymbol("B'"), [CFSymbol(None)]
-        ),  # Represents ε
+        (CFSymbol("$")): CFProduction(CFSymbol("B'"), [CFSymbol(None)]),  # Represents ε
     },
     # Entry for Non-terminal C
     (CFSymbol("C")): {
@@ -265,6 +281,7 @@ expected_table_2 = {
         ),
     },
 }
+
 
 def test_first_1():
     first_sets = extract_LL1_first_sets(test_grammar_1)
@@ -304,6 +321,10 @@ def test_table_1():
                 == table[non_terminal][terminal]
             )
 
+def test_parse_1():
+    derivation_seq = parse_LL1(test_token_seq_1, test_grammar_1, expected_table_1)
+    assert derivation_seq == expected_derivations_1
+
 
 def test_first_2():
     first_sets = extract_LL1_first_sets(test_grammar_2)
@@ -328,6 +349,7 @@ def test_follow_2():
     assert set(follow_sets.keys()) == set(expected_follow_2.keys())
     for symbol in follow_sets:
         assert set(follow_sets[symbol]) == set(expected_follow_2[symbol])
+
 
 def test_table_2():
     table = build_LL1_table(test_grammar_2, expected_first_2, expected_follow_2)
