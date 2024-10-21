@@ -38,7 +38,7 @@ if __name__ == "__main__":
     symbol_t = CFSymbol(TokenTag("t"))
     symbol_u = CFSymbol(TokenTag("u"))
     symbol_v = CFSymbol(TokenTag("v"))
-    symbol_epsilon = CFSymbol(None)
+    symbol_epsilon = CFSymbol(TokenTag("EPSILON"))
     end_of_string = CFSymbol(TokenTag("EOS"))
 
     test_grammar = CFGrammar(
@@ -74,6 +74,9 @@ if __name__ == "__main__":
     print(derivation_sequence)
     
     
-    parsed_syntax_tree = parse_sequence(tokens, derivation_sequence)
+    parsed_syntax_tree = generate_syntax_tree_symbols(derivation_sequence, test_grammar)
+    print("Parsed Tree:")
+    print(parsed_syntax_tree)
+    tokenise_syntax_tree_terminals(parsed_syntax_tree, tokens, test_grammar)
     print("Parsed Tree:")
     print(parsed_syntax_tree)

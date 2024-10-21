@@ -2,7 +2,7 @@
 
 class TokenTag:
     def __init__(self, identifier:str) -> None:
-        """A representation of a ingle tag of Token
+        """A representation of a single tag of Token
         
          Args:
             identifier (str): the name of the non-terminal or token of the terminal

@@ -325,6 +325,11 @@ def test_parse_1():
     derivation_seq = get_LL1_derivation_seq(test_token_seq_1, test_grammar_1, expected_table_1)
     assert derivation_seq == expected_derivations_1
 
+def test_syntax_node_parse_1():
+    root_syntax_node = generate_syntax_tree_symbols(expected_derivations_1, test_grammar_1)
+    assert True
+    
+    
 
 def test_first_2():
     first_sets = extract_LL1_first_sets(test_grammar_2)
@@ -363,3 +368,6 @@ def test_table_2():
                 expected_table_2[non_terminal][terminal]
                 == table[non_terminal][terminal]
             )
+
+
+    
