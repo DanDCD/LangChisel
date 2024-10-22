@@ -47,7 +47,7 @@ if __name__ == "__main__":
     # 5. Value -> "num" | "identifier"
     # 6. Print -> "print" "lbrack" Value "rbrack" "break"
 
-    symbol_S = CFSymbol("S")
+    symbol_program = CFSymbol("Program")
     symbol_statement = CFSymbol("Statement")
     symbol_declaration = CFSymbol("Declaration")
     symbol_assignment = CFSymbol("Assignemnt")
@@ -68,8 +68,8 @@ if __name__ == "__main__":
 
     test_grammar = CFGrammar(
         [
-            CFProduction(symbol_S, [symbol_statement, symbol_S]),
-            CFProduction(symbol_S, [term_epsilon]),
+            CFProduction(symbol_program, [symbol_statement, symbol_program]),
+            CFProduction(symbol_program, [term_epsilon]),
             CFProduction(symbol_statement, [symbol_declaration]),
             CFProduction(symbol_statement, [symbol_assignment]),
             CFProduction(symbol_statement, [symbol_print]),
@@ -87,7 +87,7 @@ if __name__ == "__main__":
             CFProduction(symbol_value, [term_identifier]),
             CFProduction(symbol_value, [term_num]),
         ],
-        symbol_S,
+        symbol_program,
         term_epsilon,
         term_end_of_string,
     )
