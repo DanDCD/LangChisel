@@ -359,8 +359,12 @@ class SyntaxNode:
         self.token = token
         self.children = children
 
-    def __repr__(self):
-        return f"(SyntaxNode: symbol:{self.symbol}, token:{self.token}, children:{self.children} end)"
+    def __repr__(self, level=0):
+        indent = "    " * level
+        node_repr = f"{indent}(SyntaxNode: symbol:{self.symbol}, token:{self.token})"
+        child_reprs = [child.__repr__(level + 1) for child in self.children]
+        children_repr = "\n".join(child_reprs)
+        return f"{node_repr}\n{children_repr}" if child_reprs else node_repr
 
 
 def generate_syntax_tree_symbols(
