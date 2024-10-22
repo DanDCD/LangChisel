@@ -160,10 +160,22 @@ def LL1_follow(
     grammar: CFGrammar,
     known_first_sets: dict[CFSymbol, list[CFSymbol]],
     known_follow_sets: dict[CFSymbol, list[CFSymbol]],
+    symbols_visiting: set[CFSymbol] = None
 ):
     """Find the set of symbols that may appear a string derived from this symbol (Note: this does not mean 'at the end' of a derived string, but immediately after/next any derived string)
     That is, Follow(A) = { t | S ->...-> aAtw for some a, w}, where S is the start symbol
     """
+    
+    if symbols_visiting is None:
+        symbols_visiting = set()
+        
+    # if we are already currently visiting/calculating the follow set for this we are about to inifinitely recurse, 
+    # so we escape, adding no new information (as none can be obtained)
+    if symbol in symbols_visiting:
+        return known_follow_sets.get(symbol, [])
+    
+    symbols_visiting.add(symbol)
+    
     if symbol in known_follow_sets:
         return known_follow_sets[symbol]
 
@@ -192,7 +204,7 @@ def LL1_follow(
                 if from_symbol != symbol:
                     follow_set.update(
                         LL1_follow(
-                            from_symbol, grammar, known_first_sets, known_follow_sets
+                            from_symbol, grammar, known_first_sets, known_follow_sets, symbols_visiting
                         )
                     )
                 continue  # we are now finished with this derivation, so go to the next
@@ -215,7 +227,7 @@ def LL1_follow(
                 if curr_pos == len(to_sequence) - 1 and epsilon_in_curr_first:
                     follow_set.update(
                         LL1_follow(
-                            from_symbol, grammar, known_first_sets, known_follow_sets
+                            from_symbol, grammar, known_first_sets, known_follow_sets, symbols_visiting
                         )
                     )
 
